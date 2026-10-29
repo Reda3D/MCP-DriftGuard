@@ -31,9 +31,9 @@ dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.6"]
 driftguard = "mcp_driftguard.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Reda3D/mcp-driftguard"
-Issues = "https://github.com/Reda3D/mcp-driftguard/issues"
-Security = "https://github.com/Reda3D/mcp-driftguard/security/policy"
+Homepage = "https://github.com/Reda3D/MCP-DriftGuard"
+Issues = "https://github.com/Reda3D/MCP-DriftGuard/issues"
+Security = "https://github.com/Reda3D/MCP-DriftGuard/security/policy"
 
 [tool.setuptools.packages.find]
 where = ["src"]

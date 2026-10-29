@@ -94,7 +94,7 @@ def render(report: Report) -> Dict[str, Any]:
                     "driver": {
                         "name": "mcp-driftguard",
                         "version": report.version,
-                        "informationUri": "https://github.com/Reda3D/mcp-driftguard",
+                        "informationUri": "https://github.com/Reda3D/MCP-DriftGuard",
                         "rules": [rules[key] for key in sorted(rules)],
                     }
                 },

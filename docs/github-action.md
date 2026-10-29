@@ -23,7 +23,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: Reda3D/mcp-driftguard@v1
+      - uses: Reda3D/MCP-DriftGuard@v1
         with:
           baseline: mcp/baseline.json
           candidate: mcp/candidate.json
@@ -64,7 +64,7 @@ artefacts.
 ## Code scanning
 
 ```yaml
-      - uses: Reda3D/mcp-driftguard@v1
+      - uses: Reda3D/MCP-DriftGuard@v1
         with:
           baseline: mcp/baseline.json
           candidate: mcp/candidate.json
@@ -124,7 +124,7 @@ Pin third-party actions by commit SHA in high-assurance repositories. This
 action itself should be pinned the same way:
 
 ```yaml
-      - uses: Reda3D/mcp-driftguard@<commit-sha>  # v1.0.0
+      - uses: Reda3D/MCP-DriftGuard@<commit-sha>  # v1.0.0
 ```
 
 ### Air-gapped runners

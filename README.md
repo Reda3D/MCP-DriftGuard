@@ -210,7 +210,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: Reda3D/mcp-driftguard@v1
+      - uses: Reda3D/MCP-DriftGuard@v1
         with:
           baseline: mcp/baseline.json
           candidate: mcp/candidate.json

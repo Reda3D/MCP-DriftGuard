@@ -64,4 +64,4 @@ read-only MCP server are **not** part of this release.
   raise.
 - A tool name reaching a Markdown heading was not HTML-escaped.
 
-[0.1.0]: https://github.com/Reda3D/mcp-driftguard/releases/tag/v0.1.0
+[0.1.0]: https://github.com/Reda3D/MCP-DriftGuard/releases/tag/v0.1.0
