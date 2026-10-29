@@ -1,6 +1,20 @@
-# MCP DriftGuard
+<p align="center">
+  <img src="assets/banner.svg" alt="MCP DriftGuard — contract drift, caught before merge" width="900">
+</p>
 
-**Contract-drift monitoring for MCP servers and AI connectors.**
+<p align="center">
+  <a href="https://github.com/Reda3D/MCP-DriftGuard/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Reda3D/MCP-DriftGuard/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
+  <img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9%2B-3776AB.svg">
+  <a href="https://github.com/Reda3D/MCP-DriftGuard/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Reda3D/MCP-DriftGuard"></a>
+</p>
+
+<p align="center">
+  <b>Contract-drift monitoring for MCP servers and AI connectors.</b><br>
+  <sub>Deterministic, offline, and reproducible byte for byte.</sub>
+</p>
+
+---
 
 DriftGuard compares a trusted baseline of what an MCP server declares — its
 tools, input parameters and capabilities — against a proposed update, and tells
@@ -68,11 +82,9 @@ driftguard init --output driftguard.yml
 
 ## How it works
 
-```
-snapshot A ──┐
-             ├──► diff engine ──► changes ──► policy engine ──► findings ──► reports
-snapshot B ──┘   (facts only)                (severity, block)              md/json/sarif
-```
+<p align="center">
+  <img src="assets/pipeline.svg" alt="Pipeline: baseline and candidate snapshots feed a diff engine that produces facts, a policy engine that produces findings, and reports" width="840">
+</p>
 
 The separation is the whole design:
 
