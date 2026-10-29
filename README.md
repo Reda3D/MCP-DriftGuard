@@ -206,7 +206,7 @@ jobs:
   driftguard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -225,7 +225,7 @@ shell interpolation.
 Optional SARIF upload to code scanning:
 
 ```yaml
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: driftguard.sarif
