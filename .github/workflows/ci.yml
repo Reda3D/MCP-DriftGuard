@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege by default: nothing here needs to write to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.9", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+
+      - name: Test
+        run: python -m pytest --cov=mcp_driftguard --cov-report=term-missing
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  reproducibility:
+    name: Reports are byte-identical across runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e .
+      - name: Generate twice and compare
+        run: |
+          set +e
+          driftguard check \
+            --baseline examples/baseline.json \
+            --candidate examples/candidate.json \
+            --policy examples/driftguard.yml \
+            --as-of 2026-01-01 --quiet \
+            --output /tmp/a.md --json-out /tmp/a.json --sarif-out /tmp/a.sarif
+          first=$?
+          driftguard check \
+            --baseline examples/baseline.json \
+            --candidate examples/candidate.json \
+            --policy examples/driftguard.yml \
+            --as-of 2026-01-01 --quiet \
+            --output /tmp/b.md --json-out /tmp/b.json --sarif-out /tmp/b.sarif
+          second=$?
+          set -e
+          test "${first}" -eq "${second}"
+          test "${first}" -eq 1
+          cmp /tmp/a.md /tmp/b.md
+          cmp /tmp/a.json /tmp/b.json
+          cmp /tmp/a.sarif /tmp/b.sarif
+          echo "Reports are byte-identical."
+
+  example-check:
+    name: Example snapshots produce the expected verdict
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e .
+
+      - name: Baseline compared with itself must pass
+        run: |
+          driftguard check \
+            --baseline examples/baseline.json \
+            --candidate examples/baseline.json \
+            --policy examples/driftguard.yml \
+            --quiet
+
+      - name: Drifted candidate must fail
+        run: |
+          set +e
+          driftguard check \
+            --baseline examples/baseline.json \
+            --candidate examples/candidate.json \
+            --policy examples/driftguard.yml \
+            --quiet --json-out /tmp/report.json
+          code=$?
+          set -e
+          test "${code}" -eq 1
+
+      - name: Invalid policy must fail closed
+        run: |
+          printf 'version: 1\nrules:\n  - {id: R1, description: x, severity: LOW, match: {change: nope}}\n' > /tmp/bad.yml
+          set +e
+          driftguard check \
+            --baseline examples/baseline.json \
+            --candidate examples/candidate.json \
+            --policy /tmp/bad.yml \
+            --quiet
+          code=$?
+          set -e
+          test "${code}" -eq 3
+
+      - name: SARIF is valid JSON
+        run: python -c "import json,sys; json.load(open('/tmp/report.json')); print('ok')"

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-driftguard"
+version = "0.1.0"
+description = "Deterministic contract-drift monitor for MCP servers and AI connectors"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "MCP DriftGuard contributors" }]
+keywords = ["mcp", "security", "supply-chain", "ai-agents", "sarif", "policy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = ["PyYAML>=6.0,<7.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.6"]
+
+[project.scripts]
+driftguard = "mcp_driftguard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Reda3D/mcp-driftguard"
+Issues = "https://github.com/Reda3D/mcp-driftguard/issues"
+Security = "https://github.com/Reda3D/mcp-driftguard/security/policy"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mcp_driftguard = ["data/*.yml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.coverage.run]
+source = ["mcp_driftguard"]
+branch = true

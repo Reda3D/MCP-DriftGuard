@@ -1,0 +1,86 @@
+name: Action self-test
+
+# Exercises action.yml itself, using the local checkout. This is the only way to
+# catch a broken composite action before a consumer pins it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unchanged-passes:
+    name: Unchanged snapshots pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./
+        with:
+          baseline: examples/baseline.json
+          candidate: examples/baseline.json
+          policy: examples/driftguard.yml
+
+  drift-fails:
+    name: Drifted snapshots fail with exit code 1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - id: check
+        uses: ./
+        continue-on-error: true
+        with:
+          baseline: examples/baseline.json
+          candidate: examples/candidate.json
+          policy: examples/driftguard.yml
+
+      - name: Assert the action reported a policy violation
+        run: |
+          set -euo pipefail
+          test "${{ steps.check.outputs.result }}" = "fail"
+          test "${{ steps.check.outputs.exit-code }}" = "1"
+          test -f "${{ steps.check.outputs.markdown }}"
+          test -f "${{ steps.check.outputs.json }}"
+          test -f "${{ steps.check.outputs.sarif }}"
+
+      - name: Assert the JSON report is well-formed
+        run: |
+          python -c "
+          import json, sys
+          payload = json.load(open('${{ steps.check.outputs.json }}'))
+          assert payload['summary']['result'] == 'fail'
+          assert payload['summary']['blocking'] is True
+          print('report ok:', payload['summary']['total_findings'], 'findings')
+          "
+
+  invalid-policy-fails-closed:
+    name: Invalid policy fails closed with exit code 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Write a policy with an unknown change type
+        run: |
+          printf 'version: 1\nrules:\n  - {id: R1, description: x, severity: LOW, match: {change: nope}}\n' > /tmp/bad.yml
+
+      - id: check
+        uses: ./
+        continue-on-error: true
+        with:
+          baseline: examples/baseline.json
+          candidate: examples/candidate.json
+          policy: /tmp/bad.yml
+
+      - name: Assert fail-closed
+        run: test "${{ steps.check.outputs.exit-code }}" = "3"

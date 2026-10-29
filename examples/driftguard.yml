@@ -1,0 +1,74 @@
+# Example policy: the configuration used by the documentation and the demo.
+version: 1
+fail_on: HIGH
+
+rules:
+  - id: DG001
+    description: New tools require explicit review
+    severity: MEDIUM
+    action: warn
+    match:
+      change: tool_added
+
+  - id: DG002
+    description: A tool gained destructive capability
+    severity: CRITICAL
+    action: block
+    match:
+      change: [capability_escalated, capability_added]
+      capability: destructive
+
+  - id: DG003
+    description: A tool gained the ability to delete files
+    severity: CRITICAL
+    action: block
+    match:
+      change: [capability_escalated, capability_added]
+      capability: filesystem
+
+  - id: DG004
+    description: A tool gained the ability to execute commands
+    severity: CRITICAL
+    action: block
+    match:
+      change: [capability_escalated, capability_added]
+      capability: executes_commands
+
+  - id: DG005
+    description: Input validation was weakened
+    severity: HIGH
+    action: warn
+    match:
+      change: [schema_constraint_loosened, schema_additional_properties_enabled]
+
+  - id: DG006
+    description: Description contains tool-poisoning signals
+    severity: HIGH
+    action: warn
+    match:
+      change: suspicious_description
+
+  - id: DG007
+    description: Two tools are visually indistinguishable
+    severity: HIGH
+    action: block
+    match:
+      change: tool_name_collision
+
+  - id: DG008
+    description: A tool can now reach the network
+    severity: HIGH
+    action: warn
+    match:
+      change: [capability_escalated, capability_added]
+      capability: network_access
+
+  - id: DG009
+    description: A tool can now read credentials or secrets
+    severity: CRITICAL
+    action: block
+    match:
+      change: [capability_escalated, capability_added]
+      capability: accesses_secrets
+
+waivers: []

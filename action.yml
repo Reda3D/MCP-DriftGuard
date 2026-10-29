@@ -1,0 +1,137 @@
+name: "MCP DriftGuard"
+
+description: >-
+  Detect unexpected changes in an MCP server's declared tools, parameters and
+  capabilities, and fail the workflow when a version-controlled policy is
+  violated.
+
+author: "MCP DriftGuard contributors"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  baseline:
+    description: "Path to the trusted baseline snapshot (JSON)."
+    required: true
+  candidate:
+    description: "Path to the candidate snapshot (JSON)."
+    required: true
+  policy:
+    description: >-
+      Path to the policy file (YAML). When omitted, the built-in default
+      severities apply and nothing is silently ignored.
+    required: false
+    default: ""
+  fail-on:
+    description: "Override the policy failure threshold (INFO, LOW, MEDIUM, HIGH, CRITICAL)."
+    required: false
+    default: ""
+  markdown-output:
+    description: "Where to write the Markdown report."
+    required: false
+    default: "driftguard-report.md"
+  json-output:
+    description: "Where to write the JSON report."
+    required: false
+    default: "driftguard-report.json"
+  sarif-output:
+    description: "Where to write the SARIF 2.1.0 report."
+    required: false
+    default: "driftguard.sarif"
+  step-summary:
+    description: "Append the Markdown report to the job summary."
+    required: false
+    default: "true"
+  install:
+    description: >-
+      Install DriftGuard from the action path. Set to false when the package is
+      already available in the environment (air-gapped or pinned runners).
+    required: false
+    default: "true"
+
+outputs:
+  result:
+    description: "pass or fail."
+    value: ${{ steps.check.outputs.result }}
+  exit-code:
+    description: "0 ok, 1 policy violation, 2 invalid input, 3 fail-closed."
+    value: ${{ steps.check.outputs.exit-code }}
+  markdown:
+    description: "Path to the Markdown report."
+    value: ${{ steps.check.outputs.markdown }}
+  json:
+    description: "Path to the JSON report."
+    value: ${{ steps.check.outputs.json }}
+  sarif:
+    description: "Path to the SARIF report."
+    value: ${{ steps.check.outputs.sarif }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: check
+      shell: bash
+      env:
+        DG_BASELINE: ${{ inputs.baseline }}
+        DG_CANDIDATE: ${{ inputs.candidate }}
+        DG_POLICY: ${{ inputs.policy }}
+        DG_FAIL_ON: ${{ inputs.fail-on }}
+        DG_MARKDOWN: ${{ inputs.markdown-output }}
+        DG_JSON: ${{ inputs.json-output }}
+        DG_SARIF: ${{ inputs.sarif-output }}
+        DG_STEP_SUMMARY: ${{ inputs.step-summary }}
+        DG_INSTALL: ${{ inputs.install }}
+        DG_ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -uo pipefail
+
+        # Inputs are passed through the environment, never interpolated into
+        # the script body: a value containing shell metacharacters must stay a
+        # value.
+        if [ "${DG_INSTALL}" = "true" ]; then
+          python -m pip install --quiet --disable-pip-version-check "${DG_ACTION_PATH}"
+        fi
+
+        args=(
+          check
+          --baseline "${DG_BASELINE}"
+          --candidate "${DG_CANDIDATE}"
+          --format none
+          --output "${DG_MARKDOWN}"
+          --json-out "${DG_JSON}"
+          --sarif-out "${DG_SARIF}"
+        )
+
+        if [ -n "${DG_POLICY}" ]; then
+          args+=(--policy "${DG_POLICY}")
+        fi
+        if [ -n "${DG_FAIL_ON}" ]; then
+          args+=(--fail-on "${DG_FAIL_ON}")
+        fi
+        if [ "${DG_STEP_SUMMARY}" = "true" ]; then
+          args+=(--step-summary)
+        fi
+
+        # The reports must be written even when the check fails, otherwise a
+        # reviewer sees a red build with no explanation.
+        set +e
+        python -m mcp_driftguard "${args[@]}"
+        code=$?
+        set -e
+
+        result="fail"
+        if [ "${code}" -eq 0 ]; then
+          result="pass"
+        fi
+
+        {
+          echo "exit-code=${code}"
+          echo "result=${result}"
+          echo "markdown=${DG_MARKDOWN}"
+          echo "json=${DG_JSON}"
+          echo "sarif=${DG_SARIF}"
+        } >> "${GITHUB_OUTPUT}"
+
+        exit "${code}"

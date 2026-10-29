@@ -1,0 +1,19 @@
+line-length = 100
+target-version = "py39"
+extend-exclude = [".venv"]
+
+[lint]
+# pyupgrade (UP) is deliberately not enabled: this project supports Python 3.9
+# and uses explicit ``typing`` imports plus %-formatting on purpose. Both are
+# intentional style choices, not oversights.
+select = ["E", "F", "W", "I", "B", "S", "C4", "SIM"]
+ignore = [
+    "E501",  # long lines are handled by the formatter
+    "S101",  # assert is the point in a test suite
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S604", "B015"]
+
+[format]
+quote-style = "double"
